@@ -71,7 +71,10 @@ fn window_conf() -> Conf {
     }
 }
 
-fn update_board(board: &mut [[Cell; BOARD_SIZE]; BOARD_SIZE]) {
+fn update_board(board: &mut [[Cell; BOARD_SIZE]; BOARD_SIZE], update: bool) {
+    if !update {
+        return;
+    }
     let mut board_cpy = [[Cell::Dead; BOARD_SIZE]; BOARD_SIZE];
 
     for (y, row) in board.iter().enumerate() {
@@ -117,11 +120,13 @@ fn update_board(board: &mut [[Cell; BOARD_SIZE]; BOARD_SIZE]) {
 #[macroquad::main(window_conf)]
 async fn main() {
     let mut board = [[Cell::Dead; BOARD_SIZE]; BOARD_SIZE];
+    let mut toggle = false;
     loop {
         clear_background(BLACK);
-        if !is_key_down(KeyCode::R) {
-            update_board(&mut board);
+        if is_key_pressed(KeyCode::R) {
+            toggle = !toggle;
         }
+        update_board(&mut board, toggle);
         print_board(&mut board);
         next_frame().await
     }
