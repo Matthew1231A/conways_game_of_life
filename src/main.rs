@@ -16,7 +16,7 @@ impl Not for Cell {
     type Output = Cell;
     fn not(self) -> Self::Output {
         match self {
-            Cell::Alive(_) => Cell::Dead(0),
+            Cell::Alive(_) => Cell::Dead(u32::MAX),
             Cell::Dead(_) => Cell::Alive(0),
         }
     }
