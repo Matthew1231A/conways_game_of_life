@@ -29,7 +29,7 @@ fn detect_mouse_update(board: &mut [[Cell; BOARD_SIZE]; BOARD_SIZE], cell_size: 
             ((position.1 - WINDOW_MARGIN) / (cell_size + CELL_MARGIN)).floor() as usize;
         let cell_y: usize =
             ((position.0 - WINDOW_MARGIN) / (cell_size + CELL_MARGIN)).floor() as usize;
-        println!("{} {}", cell_x, cell_y);
+
         if cell_x < BOARD_SIZE && cell_y < BOARD_SIZE {
             board[cell_x][cell_y] = !board[cell_x][cell_y];
         }
@@ -66,7 +66,7 @@ fn window_conf() -> Conf {
         window_title: "Conway's Game of Life".to_owned(),
         fullscreen: true,
         high_dpi: true,
-        window_resizable: false,
+        window_resizable: true,
         ..Default::default()
     }
 }
