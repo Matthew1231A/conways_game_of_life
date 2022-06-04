@@ -6,19 +6,25 @@ const BOARD_SIZE: usize = 50;
 const WINDOW_MARGIN: f32 = 10.;
 const CELL_MARGIN: f32 = 2.;
 
-#[derive(PartialEq, Copy, Clone)]
+#[derive(Copy, Clone)]
 enum Cell {
-    Alive,
-    Dead,
+    Alive(u32),
+    Dead(u32),
 }
 
 impl Not for Cell {
     type Output = Cell;
     fn not(self) -> Self::Output {
         match self {
-            Cell::Alive => Cell::Dead,
-            Cell::Dead => Cell::Alive,
+            Cell::Alive(_) => Cell::Dead(0),
+            Cell::Dead(_) => Cell::Alive(0),
         }
+    }
+}
+
+impl Default for Cell {
+    fn default() -> Self {
+        Cell::Dead(u32::MAX)
     }
 }
 
@@ -49,7 +55,14 @@ fn print_board(board: &mut [[Cell; BOARD_SIZE]; BOARD_SIZE]) {
             let x = _x as f32;
             let y = _y as f32;
 
-            let color = if *cell == Cell::Dead { WHITE } else { RED };
+            let color = match cell {
+                Cell::Alive(n) if *n < 1 => RED,
+                Cell::Alive(n) if *n < 4 => ORANGE,
+                Cell::Alive(_) => YELLOW,
+                Cell::Dead(n) if *n < 1 => BLUE,
+                Cell::Dead(n) if *n < 4 => SKYBLUE,
+                Cell::Dead(_) => GRAY,
+            };
             draw_rectangle(
                 WINDOW_MARGIN + x * (cell_size + CELL_MARGIN),
                 WINDOW_MARGIN + y * (cell_size + CELL_MARGIN),
@@ -75,7 +88,8 @@ fn update_board(board: &mut [[Cell; BOARD_SIZE]; BOARD_SIZE], update: bool) {
     if !update {
         return;
     }
-    let mut board_cpy = [[Cell::Dead; BOARD_SIZE]; BOARD_SIZE];
+
+    let mut board_cpy = [[Cell::default(); BOARD_SIZE]; BOARD_SIZE];
 
     for (y, row) in board.iter().enumerate() {
         for (x, cell) in row.iter().enumerate() {
@@ -98,18 +112,29 @@ fn update_board(board: &mut [[Cell; BOARD_SIZE]; BOARD_SIZE], update: bool) {
 
                 let x_coord: usize = ((x + dx).rem_euclid(board_size)) as usize;
                 let y_coord: usize = ((y + dy).rem_euclid(board_size)) as usize;
-                if board[y_coord][x_coord] == Cell::Alive {
+                if matches!(board[y_coord][x_coord], Cell::Alive(_)) {
                     num_neighbors += 1;
                 }
             }
 
-            let state = board[y][x];
-            let mut new_state = Cell::Dead;
-            if state == Cell::Dead && num_neighbors == 3 {
-                new_state = Cell::Alive;
-            } else if state == Cell::Alive && (num_neighbors == 3 || num_neighbors == 2) {
-                new_state = Cell::Alive;
-            }
+            let new_state = match cell {
+                Cell::Dead(age) => {
+                    // Dead cell with exactly three live neighbors becomesa live cell
+                    if num_neighbors == 3 {
+                        Cell::Alive(0)
+                    } else {
+                        Cell::Dead(age.saturating_add(1))
+                    }
+                }
+                Cell::Alive(age) => {
+                    // Live cell with two or three neighbors lives
+                    if num_neighbors == 3 || num_neighbors == 2 {
+                        Cell::Alive(age.saturating_add(1))
+                    } else {
+                        Cell::Dead(0)
+                    }
+                }
+            };
             board_cpy[y][x] = new_state;
         }
     }
@@ -119,7 +144,7 @@ fn update_board(board: &mut [[Cell; BOARD_SIZE]; BOARD_SIZE], update: bool) {
 
 #[macroquad::main(window_conf)]
 async fn main() {
-    let mut board = [[Cell::Dead; BOARD_SIZE]; BOARD_SIZE];
+    let mut board = [[Cell::default(); BOARD_SIZE]; BOARD_SIZE];
     let mut toggle = false;
     loop {
         clear_background(BLACK);
